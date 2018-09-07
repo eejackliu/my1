@@ -74,7 +74,10 @@ class TwoLayerNet(object):
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
-    pass
+    l1=np.dot(X,W1)+b1  # l1 is (N,H)
+    relu=np.maximum(l1,0)
+    l2=np.dot(relu,W2)+b2
+    scores=l2
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -92,7 +95,12 @@ class TwoLayerNet(object):
     # classifier loss. So that your results match ours, multiply the            #
     # regularization loss by 0.5                                                #
     #############################################################################
-    pass
+    train_num=scores.shape[0]
+    tmp=np.exp(scores)
+    softmax=tmp/np.expand_dims(np.sum(tmp,axis=1),axis=1)
+    softmax_score=-np.log(softmax[np.arange(train_num),y])
+    loss=np.sum(softmax_score)/len(y) +0.5*reg*np.sum(W1*W1)+0.5*reg*np.sum(W2*W2)
+
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -104,7 +112,22 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
-    pass
+
+    softmax[np.arange(train_num),y]-=1
+    grad_softmax=tmp
+    dw2=np.dot(relu.T,grad_softmax)
+    db2=np.ones(train_num).reshape(train_num,1)
+    db2=np.dot(db2.T,grad_softmax)
+    grad_relu=l1
+    grad_relu[grad_relu<0]=0
+    dl2=np.dot(grad_softmax,W2.T)#grad for x in w*x+b
+    grad_relu=dl2*grad_relu
+    dw1=np.dot(X.T,grad_relu)
+    db1=np.ones(train_num).reshape(train_num,1)
+    grads['W1']=dw1
+    grads['b1']=db1
+    grads['W2']=dw2
+    grads['b2']=db2
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
