@@ -22,7 +22,6 @@ def eval_numerical_gradient(f, x, verbose=True, h=0.00001):
     x[ix] = oldval - h
     fxmh = f(x) # evaluate f(x - h)
     x[ix] = oldval # restore
-
     # compute the partial derivative with centered formula
     grad[ix] = (fxph - fxmh) / (2 * h) # the slope
     if verbose:

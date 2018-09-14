@@ -66,7 +66,7 @@ class TwoLayerNet(object):
     W1, b1 = self.params['W1'], self.params['b1']
     W2, b2 = self.params['W2'], self.params['b2']
     N, D = X.shape
-
+    print W1
     # Compute the forward pass
     scores = None
     #############################################################################
@@ -113,21 +113,29 @@ class TwoLayerNet(object):
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
 
-    softmax[np.arange(train_num),y]-=1
+    softmax[np.arange(train_num),y]-=1.0
     grad_softmax=tmp
-    dw2=np.dot(relu.T,grad_softmax)
+    dw2=np.dot(relu.T,softmax)
     db2=np.ones(train_num).reshape(train_num,1)
-    db2=np.dot(db2.T,grad_softmax)
-    grad_relu=l1
-    grad_relu[grad_relu<0]=0
-    dl2=np.dot(grad_softmax,W2.T)#grad for x in w*x+b
-    grad_relu=dl2*grad_relu
-    dw1=np.dot(X.T,grad_relu)
-    db1=np.ones(train_num).reshape(train_num,1)
-    grads['W1']=dw1
-    grads['b1']=db1
-    grads['W2']=dw2
-    grads['b2']=db2
+    db2=np.dot(np.ones_like(db2).T,softmax)
+    # grad_relu=l1
+    # grad_relu[grad_relu<0]=0
+    # dl2=np.dot(grad_softmax,W2.T)#grad for x in w*x+b
+    # grad_relu=dl2*grad_relu
+    # dw1=np.dot(X.T,grad_relu)
+    # db1=np.ones(train_num).reshape(train_num,1)
+    tmp=np.ones_like(relu)
+    tmp[relu==0]=0.0
+    dx2=np.dot(softmax,W2.T)
+    drelu=tmp*dx2
+    dw1=np.dot(X.T,drelu)
+    # dw1=drelu*dw1
+    db1=np.ones(train_num).reshape(1,train_num)
+    db1=np.dot(db1,drelu)
+    grads['W1']=dw1/train_num+reg*W1
+    grads['b1']=db1/train_num
+    grads['W2']=dw2/train_num+reg*W2
+    grads['b2']=db2/train_num
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -171,7 +179,9 @@ class TwoLayerNet(object):
       # TODO: Create a random minibatch of training data and labels, storing  #
       # them in X_batch and y_batch respectively.                             #
       #########################################################################
-      pass
+      label=np.random.choice(num_train,batch_size)
+      X_batch=X[label]
+      y_batch=y[label]
       #########################################################################
       #                             END OF YOUR CODE                          #
       #########################################################################
@@ -180,13 +190,17 @@ class TwoLayerNet(object):
       loss, grads = self.loss(X_batch, y=y_batch, reg=reg)
       loss_history.append(loss)
 
+
       #########################################################################
       # TODO: Use the gradients in the grads dictionary to update the         #
       # parameters of the network (stored in the dictionary self.params)      #
       # using stochastic gradient descent. You'll need to use the gradients   #
       # stored in the grads dictionary defined above.                         #
       #########################################################################
-      pass
+      self.params['W1']-=grads['W1']*learning_rate
+      self.params['b1']-=np.squeeze(grads['b1'])*learning_rate
+      self.params['W2']-=grads['W2']*learning_rate
+      self.params['b2']-=np.squeeze(grads['b2'])*learning_rate
       #########################################################################
       #                             END OF YOUR CODE                          #
       #########################################################################
@@ -231,7 +245,10 @@ class TwoLayerNet(object):
     ###########################################################################
     # TODO: Implement this function; it should be VERY simple!                #
     ###########################################################################
-    pass
+    l1=np.dot(X,self.params['W1'])+self.params['b1']  # l1 is (N,H)
+    relu=np.maximum(l1,0)
+    l2=np.dot(relu,self.params['W2'])+self.params['b2']
+    y_pred=np.argmax(l2,axis=1)
     ###########################################################################
     #                              END OF YOUR CODE                           #
     ###########################################################################
